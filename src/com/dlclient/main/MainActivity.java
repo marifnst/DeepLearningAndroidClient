@@ -1,16 +1,25 @@
 package com.dlclient.main;
 
-import android.support.v7.app.ActionBarActivity;
+import java.io.IOException;
+
+import org.ksoap2.SoapEnvelope;
+import org.ksoap2.SoapFault;
+import org.ksoap2.serialization.SoapObject;
+import org.ksoap2.serialization.SoapPrimitive;
+import org.ksoap2.serialization.SoapSerializationEnvelope;
+import org.ksoap2.transport.HttpResponseException;
+import org.ksoap2.transport.HttpTransportSE;
+import org.xmlpull.v1.XmlPullParserException;
+
 import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
-import android.webkit.WebViewClient;
-import android.widget.Toast;
 
 public class MainActivity extends Activity {
 
@@ -29,12 +38,15 @@ public class MainActivity extends Activity {
 			public void performClick() throws Exception {
 				// Toast.makeText(MainActivity.this, "Login clicked",
 				// Toast.LENGTH_LONG).show();
-				Intent chooseFile;
-				Intent intent;
-				chooseFile = new Intent(Intent.ACTION_GET_CONTENT);
-				chooseFile.setType("file/*");
-				intent = Intent.createChooser(chooseFile, "Choose a file");
-				startActivityForResult(intent, ACTIVITY_CHOOSE_FILE);
+				
+//				Intent chooseFile;
+//				Intent intent;
+//				chooseFile = new Intent(Intent.ACTION_GET_CONTENT);
+//				chooseFile.setType("file/*");
+//				intent = Intent.createChooser(chooseFile, "Choose a file");
+//				startActivityForResult(intent, ACTIVITY_CHOOSE_FILE);
+				
+				getService();
 			}
 		}, "login");
 		webview.loadUrl("file:///android_asset/index.html");
@@ -61,14 +73,50 @@ public class MainActivity extends Activity {
 
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-	    switch(requestCode) {
-	      case ACTIVITY_CHOOSE_FILE: {
-	        if (resultCode == RESULT_OK){
-	          Uri uri = data.getData();
-	          String filePath = uri.getPath();
-	          webview.loadUrl("javascript:setPathValue('" + filePath + "');");
-	        }
-	      }
-	    }
-	  }
+		switch (requestCode) {
+		case ACTIVITY_CHOOSE_FILE: {
+			if (resultCode == RESULT_OK) {
+				Uri uri = data.getData();
+				String filePath = uri.getPath();
+				webview.loadUrl("javascript:setPathValue('" + filePath + "');");
+			}
+		}
+		}
+	}
+
+	public void getService() {
+		String NAMESPACE = "http://services.deeplearningserver.com/";
+		String METHOD_NAME = "batikDetection";
+		String URL = "http://192.168.43.248:8080/DeepLearningServer/services/batik_detection?wsdl";
+		String SOAP_ACTION = "http://services.deeplearningserver.com/batik_detection";
+
+		SoapObject request = new SoapObject(NAMESPACE, METHOD_NAME);
+		SoapSerializationEnvelope envelope = new SoapSerializationEnvelope(SoapEnvelope.VER11);
+		envelope.setOutputSoapObject(request);
+		HttpTransportSE httpTransport = new HttpTransportSE(URL);
+		//httpTransport.debug = true;
+
+		try {
+			httpTransport.call("", envelope);
+		} catch (HttpResponseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (XmlPullParserException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} // send request
+		
+		SoapPrimitive result = null;
+		try {
+			result = (SoapPrimitive) envelope.getResponse();
+		} catch (SoapFault e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		Log.d("App",""+result.toString());
+	}
 }
