@@ -1,7 +1,12 @@
 package com.dlclient.main;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 
+import org.kobjects.base64.Base64;
 import org.ksoap2.SoapEnvelope;
 import org.ksoap2.SoapFault;
 import org.ksoap2.serialization.SoapObject;
@@ -13,6 +18,8 @@ import org.xmlpull.v1.XmlPullParserException;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -25,6 +32,7 @@ public class MainActivity extends Activity {
 
 	final int ACTIVITY_CHOOSE_FILE = 1;
 	private WebView webview;
+	private String fileName;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -39,16 +47,35 @@ public class MainActivity extends Activity {
 				// Toast.makeText(MainActivity.this, "Login clicked",
 				// Toast.LENGTH_LONG).show();
 				
-//				Intent chooseFile;
-//				Intent intent;
-//				chooseFile = new Intent(Intent.ACTION_GET_CONTENT);
-//				chooseFile.setType("file/*");
-//				intent = Intent.createChooser(chooseFile, "Choose a file");
-//				startActivityForResult(intent, ACTIVITY_CHOOSE_FILE);
-				
-				getService();
+				Intent chooseFile;
+				Intent intent;
+				chooseFile = new Intent(Intent.ACTION_GET_CONTENT);
+				chooseFile.setType("file/*");
+				intent = Intent.createChooser(chooseFile, "Choose a file");
+				startActivityForResult(intent, ACTIVITY_CHOOSE_FILE);
 			}
 		}, "login");
+		
+		webview.addJavascriptInterface(new Object() {
+			@JavascriptInterface
+			public void batikDetection() throws Exception {
+				File imagefile = new File(fileName);
+		        FileInputStream fis = null;
+		        try {
+		            fis = new FileInputStream(imagefile);
+		        } catch (FileNotFoundException e) {
+		            // TODO Auto-generated catch block
+		            e.printStackTrace();
+		        }
+				
+				Bitmap bm = BitmapFactory.decodeStream(fis);
+		        ByteArrayOutputStream baos = new ByteArrayOutputStream();  
+		        bm.compress(Bitmap.CompressFormat.JPEG, 100 , baos);    
+		        byte[] b = baos.toByteArray();
+		        getService(Base64.encode(b));
+			}
+		}, "detect");
+		
 		webview.loadUrl("file:///android_asset/index.html");
 	}
 
@@ -74,23 +101,25 @@ public class MainActivity extends Activity {
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		switch (requestCode) {
-		case ACTIVITY_CHOOSE_FILE: {
-			if (resultCode == RESULT_OK) {
-				Uri uri = data.getData();
-				String filePath = uri.getPath();
-				webview.loadUrl("javascript:setPathValue('" + filePath + "');");
+			case ACTIVITY_CHOOSE_FILE: {
+				if (resultCode == RESULT_OK) {
+					Uri uri = data.getData();
+					String filePath = uri.getPath();
+					fileName = filePath;
+					webview.loadUrl("javascript:setPathValue('" + filePath + "');");
+				}
 			}
-		}
 		}
 	}
 
-	public void getService() {
+	public void getService(String imageData) {
 		String NAMESPACE = "http://services.deeplearningserver.com/";
 		String METHOD_NAME = "batikDetection";
 		String URL = "http://192.168.43.248:8080/DeepLearningServer/services/batik_detection?wsdl";
-		String SOAP_ACTION = "http://services.deeplearningserver.com/batik_detection";
+		//String SOAP_ACTION = "http://services.deeplearningserver.com/batik_detection";
 
 		SoapObject request = new SoapObject(NAMESPACE, METHOD_NAME);
+		request.addProperty("arg0", imageData);
 		SoapSerializationEnvelope envelope = new SoapSerializationEnvelope(SoapEnvelope.VER11);
 		envelope.setOutputSoapObject(request);
 		HttpTransportSE httpTransport = new HttpTransportSE(URL);
