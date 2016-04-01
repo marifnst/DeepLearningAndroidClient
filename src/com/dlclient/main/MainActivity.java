@@ -1,6 +1,8 @@
 package com.dlclient.main;
 
 import android.support.v7.app.ActionBarActivity;
+import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -9,21 +11,9 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
 
-public class MainActivity extends ActionBarActivity {
+public class MainActivity extends Activity {
 
-	private class MyBrowser extends WebViewClient {
-		@Override
-		public boolean shouldOverrideUrlLoading(WebView view, String url) {
-			view.loadUrl(url);
-			view.addJavascriptInterface(new Object() {
-				@JavascriptInterface
-				public void performClick() throws Exception {
-					Toast.makeText(MainActivity.this, "Login clicked", Toast.LENGTH_LONG).show();
-				}
-			}, "login");
-			return true;
-		}
-	}
+	final int ACTIVITY_CHOOSE_FILE = 1;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -35,7 +25,13 @@ public class MainActivity extends ActionBarActivity {
 		webview.addJavascriptInterface(new Object() {
 			@JavascriptInterface
 			public void performClick() throws Exception {
-				Toast.makeText(MainActivity.this, "Login clicked", Toast.LENGTH_LONG).show();
+				//Toast.makeText(MainActivity.this, "Login clicked", Toast.LENGTH_LONG).show();
+		        Intent chooseFile;
+		        Intent intent;
+		        chooseFile = new Intent(Intent.ACTION_GET_CONTENT);
+		        chooseFile.setType("file/*");
+		        intent = Intent.createChooser(chooseFile, "Choose a file");
+		        startActivityForResult(intent, ACTIVITY_CHOOSE_FILE);
 			}
 		}, "login");
 		webview.loadUrl("file:///android_asset/index.html");
