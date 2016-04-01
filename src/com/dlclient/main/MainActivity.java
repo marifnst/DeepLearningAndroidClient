@@ -3,6 +3,7 @@ package com.dlclient.main;
 import android.support.v7.app.ActionBarActivity;
 import android.app.Activity;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -14,24 +15,26 @@ import android.widget.Toast;
 public class MainActivity extends Activity {
 
 	final int ACTIVITY_CHOOSE_FILE = 1;
+	private WebView webview;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
-		WebView webview = (WebView) findViewById(R.id.webview);
+		webview = (WebView) findViewById(R.id.webview);
 		webview.getSettings().setJavaScriptEnabled(true);
-		//webview.setWebViewClient(new MyBrowser());
+
 		webview.addJavascriptInterface(new Object() {
 			@JavascriptInterface
 			public void performClick() throws Exception {
-				//Toast.makeText(MainActivity.this, "Login clicked", Toast.LENGTH_LONG).show();
-		        Intent chooseFile;
-		        Intent intent;
-		        chooseFile = new Intent(Intent.ACTION_GET_CONTENT);
-		        chooseFile.setType("file/*");
-		        intent = Intent.createChooser(chooseFile, "Choose a file");
-		        startActivityForResult(intent, ACTIVITY_CHOOSE_FILE);
+				// Toast.makeText(MainActivity.this, "Login clicked",
+				// Toast.LENGTH_LONG).show();
+				Intent chooseFile;
+				Intent intent;
+				chooseFile = new Intent(Intent.ACTION_GET_CONTENT);
+				chooseFile.setType("file/*");
+				intent = Intent.createChooser(chooseFile, "Choose a file");
+				startActivityForResult(intent, ACTIVITY_CHOOSE_FILE);
 			}
 		}, "login");
 		webview.loadUrl("file:///android_asset/index.html");
@@ -55,4 +58,17 @@ public class MainActivity extends Activity {
 		}
 		return super.onOptionsItemSelected(item);
 	}
+
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+	    switch(requestCode) {
+	      case ACTIVITY_CHOOSE_FILE: {
+	        if (resultCode == RESULT_OK){
+	          Uri uri = data.getData();
+	          String filePath = uri.getPath();
+	          webview.loadUrl("javascript:setPathValue('" + filePath + "');");
+	        }
+	      }
+	    }
+	  }
 }
