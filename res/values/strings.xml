@@ -4,5 +4,8 @@
     <string name="app_name">DeepLearningClient</string>
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
+    <string name="namespace">Namespace</string>
+    <string name="method_name">Method</string>
+    <string name="url">URL</string>
 
 </resources>
